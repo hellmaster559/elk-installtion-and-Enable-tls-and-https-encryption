@@ -1,5 +1,8 @@
 # elk-installtion-and-Enable-the-tls-and-https-encryption
+
 How you can install ELK and Enable the TLS Encryption and HTTPS Communication
+
+## How To Install ELK
 
 1) Install Java and nginx
 ```
@@ -124,3 +127,74 @@ $ sudo ln -s /etc/nginx/sites-available/kibana /etc/nginx/sites-enabled/kibana
 $ sudo systemctl restart nginx
 ```
 
+## Enable the TLS Encryption and HTTPS Communication
+
+1) Stop Elasticsearch and Kibana service:
+```
+$ Service elasticsearch stop
+$Service kibana stop
+```
+2) nerate Certificates for Elasticsearch:
+```
+$ /usr/share/elasticsearch/bin/elasticsearch-certutil  ca
+$ /usr/share/elasticsearch/bin/elasticsearch-certutil  cert –ca elastic-stack-ca.p12
+```
+3) Copy the file to Elasticsearch folder and change ownership and permissions:
+```
+$ cp /usr/share/elasticsearch/elastic-certificates.p12 /etc/elasticsearch/
+$ chown root.elasticsearch /etc/elasticsearch/elastic-certificates.p12
+$ chmod 660 /etc/elasticsearch/elastic-certificates.p12
+```
+4)Generate Certificate For Elasticsearch and Kibana
+```
+$ /usr/share/elasticsearch/bin/elasticsearch-certutil  http
+```
+   A) For Elasticserach
+```
+	$ cd /usr/share/elasticsearch
+	$ unzip elasticsearch-ssl-http.zip
+	$ cp  /usr/share/elasticsearch/elasticsearch/http.p12 /etc/elasticsearch/
+	$ chown root.elasticsearch /etc/elasticsearch/http.p12
+	$ chmod 660 /etc/elasticsearch/http.p12
+```
+
+   B) For Kibana
+```
+        $ cp  /usr/share/elasticsearch/kibana/elasticsearch-ca.pem /etc/kibana/
+```
+5) Edit elasticserach.yml
+```
+$ vi /etc/elasticsearch/elasticsearch.yml
+```
+6) Add the Following Lines at the end in elasticsearch.yml
+```
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.verification_mode: certificate
+xpack.security.transport.ssl.keystore.path: elastic-certificates.p12
+xpack.security.transport.ssl.truststore.path: elastic-certificates.p12
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.keystore.path: "http.p12"
+```
+7) Start the Elasticserach service:
+```
+$ systemctl start elasticsearch
+```
+8) Edit Kibana.yml
+```
+$ vi /etc/kibana/kibana.yml
+```
+9) Edit Following line in kibana.yml
+```
+elasticsearch.hosts: ["http://localhost:9200"]
+elasticsearch.ssl.certificateAuthorities: [/path/to/CA.pem]
+```
+TO
+```
+elasticsearch.hosts: ["https://localhost:9200"]
+elasticsearch.ssl.certificateAuthorities: [/etc/kibana/elasticserach-ca.pem]
+elasticserach.ssl.verificationMode: none
+```
+10) Start the Kibana Service:
+```
+$ service kibana start
+```
