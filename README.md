@@ -38,36 +38,89 @@ server.host: "localhost"
 $ sudo systemctl restart kibana
 $ sudo systemctl start elasticsearch
 ```
-10) we need to create a new Nginx configuration file to serve our instance of Kibana:
+10) Create the Certificate Configuration File
 ```
-$ sudo nano /etc/nginx/sites-available/kibana
+$ sudo nano localhost.conf
 ```
-11) Inside this new file, you can paste the following code:
+11) Copy it in the localhost.conf
+
+``` 
+[req]
+default_bits       = 2048
+default_keyfile    = localhost.key
+distinguished_name = req_distinguished_name
+req_extensions     = req_ext
+x509_extensions    = v3_ca
+
+[req_distinguished_name]
+countryName                 = Country Name (2 letter code)
+countryName_default         = US
+stateOrProvinceName         = State or Province Name (full name)
+stateOrProvinceName_default = New York
+localityName                = Locality Name (eg, city)
+localityName_default        = Rochester
+organizationName            = Organization Name (eg, company)
+organizationName_default    = localhost
+organizationalUnitName      = organizationalunit
+organizationalUnitName_default = Development
+commonName                  = Common Name (e.g. server FQDN or YOUR name)
+commonName_default          = localhost
+commonName_max              = 64
+
+[req_ext]
+subjectAltName = @alt_names
+
+[v3_ca]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1   = localhost
+DNS.2   = 127.0.0.1
+```
+
+12) Create the Certificate using OpenSSL
+```
+$ sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout localhost.key -out localhost.crt -config localhost.conf
+```
+13) Copy the public key to the /etc/ssl/certs directory
+```
+$ sudo cp localhost.crt /etc/ssl/certs/localhost.crt
+```
+14) Copy the private key to the /etc/ssl/private directory
+```
+$ sudo cp localhost.key /etc/ssl/private/localhost.key
+```
+15) Update the Nginx Configuration File to Load the Certificate Key Pair
+```
+$ sudo nano /etc/nginx/sites-available/default
+```
 ```
 server {
-        listen 80;
+        listen 443 ssl http2;
+        listen [::]:443 ssl http2;
+        server_name localhost;
 
-        server_name your-site.com;
+        ssl_certificate /etc/ssl/certs/localhost.crt;
+        ssl_certificate_key /etc/ssl/private/localhost.key;
 
-        auth_basic "Restricted Access";
-        auth_basic_user_file /etc/nginx/htpasswd.kibana;
+        ssl_protocols TLSv1.2 TLSv1.1 TLSv1;
 
         location / {
-            proxy_pass http://localhost:5601;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection 'upgrade';
-            proxy_set_header Host $host;
-            proxy_cache_bypass $http_upgrade;        
-        }
-    }
+           proxy_pass http://localhost:5601;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+       }
+   }
 ```
-12) Once the new configuration is saved, you need to remove the existing default config, and create a new symlink in sites-enabled for Kibana.
+16) Once the new configuration is saved, you need to remove the existing default config, and create a new symlink in sites-enabled for Kibana.
 ```
 $ sudo rm /etc/nginx/sites-enabled/default
 $ sudo ln -s /etc/nginx/sites-available/kibana /etc/nginx/sites-enabled/kibana
 ```
-13) Lastly, restart Nginx for all of the changes to take effect:
+17) Lastly, restart Nginx for all of the changes to take effect:
 ```
 $ sudo systemctl restart nginx
 ```
