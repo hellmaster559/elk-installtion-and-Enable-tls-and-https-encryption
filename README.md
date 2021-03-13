@@ -145,7 +145,7 @@ $ cp /usr/share/elasticsearch/elastic-certificates.p12 /etc/elasticsearch/
 $ chown root.elasticsearch /etc/elasticsearch/elastic-certificates.p12
 $ chmod 660 /etc/elasticsearch/elastic-certificates.p12
 ```
-4)Generate Certificate For Elasticsearch and Kibana
+4) Generate Certificate For Elasticsearch and Kibana
 ```
 $ /usr/share/elasticsearch/bin/elasticsearch-certutil  http
 ```
@@ -162,11 +162,15 @@ $ /usr/share/elasticsearch/bin/elasticsearch-certutil  http
 ```
         $ cp  /usr/share/elasticsearch/kibana/elasticsearch-ca.pem /etc/kibana/
 ```
-5) Edit elasticserach.yml
+5) Set the password for the ElasticSearch Built-in users.
+```
+$ /usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive
+```
+6) Edit elasticserach.yml
 ```
 $ vi /etc/elasticsearch/elasticsearch.yml
 ```
-6) Add the Following Lines at the end in elasticsearch.yml
+7) Add the Following Lines at the end in elasticsearch.yml
 ```
 xpack.security.transport.ssl.enabled: true
 xpack.security.transport.ssl.verification_mode: certificate
@@ -175,26 +179,28 @@ xpack.security.transport.ssl.truststore.path: elastic-certificates.p12
 xpack.security.http.ssl.enabled: true
 xpack.security.http.ssl.keystore.path: "http.p12"
 ```
-7) Start the Elasticserach service:
+8) Start the Elasticserach service:
 ```
 $ systemctl start elasticsearch
 ```
-8) Edit Kibana.yml
+9) Edit Kibana.yml
 ```
 $ vi /etc/kibana/kibana.yml
 ```
-9) Edit Following line in kibana.yml
+10) Edit Following line in kibana.yml
 ```
 elasticsearch.hosts: ["http://localhost:9200"]
 elasticsearch.ssl.certificateAuthorities: [/path/to/CA.pem]
 ```
 TO
 ```
+elasticsearch.username: "kibana_system"
+elasticsearch.password: "PASSWORD"
 elasticsearch.hosts: ["https://localhost:9200"]
 elasticsearch.ssl.certificateAuthorities: [/etc/kibana/elasticserach-ca.pem]
 elasticserach.ssl.verificationMode: none
 ```
-10) Start the Kibana Service:
+11) Start the Kibana Service:
 ```
 $ service kibana start
 ```
