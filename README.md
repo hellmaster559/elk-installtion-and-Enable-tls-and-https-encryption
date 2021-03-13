@@ -42,7 +42,6 @@ $ sudo systemctl start elasticsearch
 ```
 $ sudo nano localhost.conf
 ```
-11) Copy it in the localhost.conf
 
 ``` 
 [req]
